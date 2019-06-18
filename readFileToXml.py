@@ -44,13 +44,12 @@ if __name__ == "__main__":
                 entitys = list(filter(lambda x: x.strip() != "", entitys)) # 去掉空行
 
                 if len(entitys) > 0:
-                    words = d.words
-                    entityobjs = []
+                    words = d.words # 这里获取原文。
                     for eid, e in enumerate(entitys):
                         _, type_pos, text = e.split("\t")# 在brat 中 标注格式是t1\t类型 坐标 坐标\t正文  所以先用\t分割
                         type, start, end = getType_pos(type_pos)  # 获取信息
                         sw = words[int(start)] # 这里以及下面的assert 主要是校验用的，看标注文件标注的实体和原文中实体是不是一至的。
-                        ew = words[int(end) - 1]
+                        ew = words[int(end) - 1]# 在原文中找到  标注坐标所对应得字，然后判断 原文找到得 和标注文件 中得 字是否是一样得，如果不一样说明有问题。
                         assert sw.pos == int(start)
                         assert ew.pos == int(end) - 1
                         assert sw.text == text[0]
