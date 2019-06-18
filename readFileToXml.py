@@ -58,7 +58,7 @@ if __name__ == "__main__":
                         end_line_id = ew.line_id
                         entityobj = docObject.entity(eid, text, start_line_id, end_line_id, start, end, type, d.doc_id)
                         d.entitys.append(entityobj)# 保存到当前doc对象得entitys中
-
+                # todo 下面要实现加载关系标注文件得功能。
                 result.append(d)
 
     utils.dumpData4Gb(result, "D:\\卡证要素提取\\data\\train1.bin") # 将文件保存在需要的路径中
