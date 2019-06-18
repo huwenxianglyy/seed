@@ -21,7 +21,7 @@ class doc(object):
         self.file_name=""
         self.lines=[] # line 的list
         self.is_train="0"
-        self.entitys={} # 这里是个Map 方便生成simple
+        self.entitys=[] # 这里是所有得entity
         self.predict_entitys={} # 这里是个Map 方便生成simple
         self.words=[]
         self.simples=[]
@@ -310,8 +310,8 @@ class entity(object):
     def __init__(self,id,text,start_line_id,end_line_id,start,end,type,doc_id):
         self.id=id
         self.text=text
-        self.start_line_id=start_line_id # 这四个一定要是 int 型
-        self.end_line_id=end_line_id
+        self.start_line_id=start_line_id # 这四个一定要是 int 型 ，起始行的坐标
+        self.end_line_id=end_line_id# 结束行坐标
         self.start=start # 这里都是全局的 坐标
         self.end=end# 这里是全局的坐标 end 的坐标+1
         self.type=type
