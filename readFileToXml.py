@@ -4,14 +4,29 @@ import docObject
 import uuid
 from sklearn.model_selection import train_test_split
 import numpy as np
+import re
+
 
 def getType_pos(type_pos):# 这里获取 实体类型和实体位置 todo  这里获取信息 要注意 标签得单词之间有空格得情况  可以判断 t_p得长度，根据不同长度做处理
     t_p=type_pos.split(" ")
     assert len(t_p)>=3
     type=t_p[0]
-    start=t_p[1]
-    end=t_p[-1]
-    return type,start,end
+    rest=" ".join(t_p[1:])
+    pos_list=rest.split(";")
+    position=[]
+    for p in pos_list:
+      start,end =p.split(" ")
+      position.append((start,end))
+    return type,position
+
+def get_relation_type_entity(r):# 这里获取 实体类型和实体位置 todo  这里获取信息 要注意 标签得单词之间有空格得情况  可以判断 t_p得长度，根据不同长度做处理
+    t_p=r.split(" ")
+    assert len(t_p)>=3
+    type=t_p[0]
+    entity1_type,entity1_id=t_p[1].split(":")
+    entity2_type,entity2_id=t_p[2].split(":")
+    return type,entity1_type,entity1_id,entity2_type,entity2_id
+
 
 
 
@@ -29,7 +44,6 @@ if __name__ == "__main__":
                     continue
                 a1_file=os.path.splitext(f)[0]+".a1"#
                 a2_file=os.path.splitext(f)[0]+".a2"# 这里获取 两个标注文件
-
                 d = docObject.doc()
                 tempLines = []
                 d.doc_id = os.path.splitext(f)[0]# doc的ID就用文件名来代替
@@ -38,27 +52,40 @@ if __name__ == "__main__":
                 d.lines=lineObjs
                 d.linesToWords()
                 # 上面 doc 对象创建完成
-
-                with open(os.path.join(rt, a1_file)) as f2:  # 读取实体标注文件
+                with open(os.path.join(rt, a1_file),encoding="utf-8") as f2:  # 读取实体标注文件
                     entitys = f2.read().splitlines()  # 读取entitys
                 entitys = list(filter(lambda x: x.strip() != "", entitys)) # 去掉空行
 
                 if len(entitys) > 0:
                     words = d.words # 这里获取原文。
                     for eid, e in enumerate(entitys):
-                        _, type_pos, text = e.split("\t")# 在brat 中 标注格式是t1\t类型 坐标 坐标\t正文  所以先用\t分割
-                        type, start, end = getType_pos(type_pos)  # 获取信息
-                        sw = words[int(start)] # 这里以及下面的assert 主要是校验用的，看标注文件标注的实体和原文中实体是不是一至的。
-                        ew = words[int(end) - 1]# 在原文中找到  标注坐标所对应得字，然后判断 原文找到得 和标注文件 中得 字是否是一样得，如果不一样说明有问题。
-                        assert sw.pos == int(start)
-                        assert ew.pos == int(end) - 1
-                        assert sw.text == text[0]
-                        assert ew.text == text[-1]
-                        start_line_id = sw.line_id
-                        end_line_id = ew.line_id
-                        entityobj = docObject.entity(eid, text, start_line_id, end_line_id, start, end, type, d.doc_id)
+                        t_id, type_pos, text = e.split("\t")# 在brat 中 标注格式是t1\t类型 坐标 坐标\t正文  所以先用\t分割
+                        type,  pos = getType_pos(type_pos)  # 获取信息
+
+                        for (start,end),t in zip(pos,text.split(" ")):
+                            sw = words[int(start)] # 这里以及下面的assert 主要是校验用的，看标注文件标注的实体和原文中实体是不是一至的。
+                            ew = words[int(end) - 1]# 在原文中找到  标注坐标所对应得字，然后判断 原文找到得 和标注文件 中得 字是否是一样得，如果不一样说明有问题。
+                            assert sw.pos == int(start)
+                            assert ew.pos == int(end) - 1
+                            # assert sw.text == t[0]
+                            # assert ew.text == t[-1]
+                        entityobj = docObject.entity(t_id, text,pos, type, d.doc_id)
                         d.entitys.append(entityobj)# 保存到当前doc对象得entitys中
-                # todo 下面要实现加载关系标注文件得功能。
+
+                with open(os.path.join(rt, a2_file),encoding="utf-8") as f3:  # 读取实体标注文件
+                    relation = f3.read().splitlines()  # 读取entitys
+
+                relation = list(filter(lambda x: x.strip() != "", relation))  # 去掉空行
+
+                if len(relation) > 0:
+                    for eid, r in enumerate(relation):
+                        r_id, type_pos = r.split("\t")  # 在brat 中 标注格式是t1\t类型 坐标 坐标\t正文  所以先用\t分割
+                        r_type, e1_type, e1_id, e2_type, e2_id= get_relation_type_entity(type_pos)  # 获取信息
+                        e1=list(filter(lambda x:x.id==e1_id,d.entitys))[0]
+                        e2=list(filter(lambda x:x.id==e2_id,d.entitys))[0]
+                        relation_obj = docObject.relation(r_id,r_type, e1, e2, e1_type, e2_type)
+                        d.relations.append(relation_obj)  # 保存到当前doc对象得entitys中
+                d.getSimple()
                 result.append(d)
 
     utils.dumpData4Gb(result, "D:\\卡证要素提取\\data\\train1.bin") # 将文件保存在需要的路径中

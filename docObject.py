@@ -25,11 +25,12 @@ class doc(object):
         self.predict_entitys={} # 这里是个Map 方便生成simple
         self.words=[]
         self.simples=[]
+        self.relations=[]
 
 
 
 
-    def linesToWords(self): # todo 这里通过 entity assert 下
+    def linesToWords(self): # 把line中的word 加到words中
         index=0
         for l in self.lines:
             l_texts=l.text
@@ -59,30 +60,32 @@ class doc(object):
             tempWords.clear()
 
 
-    # def creatSimple(self,tempWords):#这里创建样本
-    #     if len(tempWords)<FLAGS.max_seq_length-2:
-    #         s = simple()
-    #         s.words = tempWords
-    #         self.simples.append(s)
-    #     else:
-    #         lines=self.getLinesFromWords(tempWords)
-    #         self.createSimpleFromLines(lines)
+    def creatSimple(self,tempWords):#这里创建样本
+        if len(tempWords)<128-2:
+            s = simple()
+            s.words = tempWords
+            self.simples.append(s)
+        else:
+            # todo
+            pass
+
+            # self.createSimpleFromLines(lines)
 
 
-    def createSimpleFromLines(self,lines):#在用标点无法划分的时候， 使用lines 来尝试划分
-        tempWords=[]
-        for l in lines:
-            text="".join(list(map(lambda x:x.text,l)))
-            search=re.search(":|：", text)
-            if search is not None and search.start()<8:# 这里是分割点
-                if len(tempWords)>0:
-                    self.createSimpleFromLinesUtils(list(tempWords))
-                    tempWords.clear()
-                tempWords.extend(l)
-            else:
-                tempWords.extend(l)
-        if len(tempWords)>0:
-            self.createSimpleFromLinesUtils(list(tempWords))
+    # def createSimpleFromLines(self,lines):#在用标点无法划分的时候， 使用lines 来尝试划分
+    #     tempWords=[]
+    #     for l in lines:
+    #         text="".join(list(map(lambda x:x.text,l)))
+    #         search=re.search(":|：", text)
+    #         if search is not None and search.start()<8:# 这里是分割点
+    #             if len(tempWords)>0:
+    #                 self.createSimpleFromLinesUtils(list(tempWords))
+    #                 tempWords.clear()
+    #             tempWords.extend(l)
+    #         else:
+    #             tempWords.extend(l)
+    #     if len(tempWords)>0:
+    #         self.createSimpleFromLinesUtils(list(tempWords))
 
 
     # def createSimpleFromLinesUtils(self,tempWords):# 这里最终生成 simple  如果 按照 : 分割还是大于 就采取截断的方式。
@@ -102,40 +105,20 @@ class doc(object):
     #             self.simples.append(s)
 
 
-    def getLinesFromWords(self, tempWords):
-        lines = []
-        last_line_id = tempWords[0].line_id
-        tempLines = []
-        for w in tempWords:
-            if w.line_id == last_line_id:
-                tempLines.append(w)
-            else:
-                lines.append(list(tempLines))
-                tempLines.clear()
-                last_line_id = w.line_id
-                tempLines.append(w)
-        if len(tempLines) > 0:
-            lines.append(list(tempLines))
-            tempLines.clear()
-        return lines
+
     def createSimpleId(self):
         for s in self.simples:
             s.id = self.doc_id + "-"+str(s.words[0].pos)+"-"+str(s.words[-1].pos)
 
 
-    def getSimple(self):
+    def getSimple(self): # 创建完doc对象之后 调用 ，创建输入样本
         self.splitDocToSimple() # 分割获取simple 实例
-        self.createSimpleId()#  创建 simple 的ID
         for s in self.simples:
             texts,entitys=self.convertSimpleWords(s.words)
-            s.inputWords=self.removeWord(texts)
+            # s.inputWords=self.removeWord(texts)
             s.labels=entitys
 
-    def getOneSimple(self):# 这个是用mysql 中的数据生成 标注文件的时候使用。
-        s = simple()
-        s.words = self.words
-        s.labels=list(self.entitys.values())
-        self.simples.append(s)
+
 
 
 
@@ -169,41 +152,6 @@ class doc(object):
         return texts
 
 
-    def fromEntityToAnn(self,path):# 这里是给文件做 预标用的。
-        index=0
-        ann_strs=[]
-        for s in self.simples:
-            bucket={}
-            for w in s.words:
-                bucket[w.pos]=w.text # 创建一个桶，方便获取字符
-            for e in s.predict_labels:
-                start=e.start
-                end=e.end
-                ann_str="T"+str(index)+"\t"
-                type_pos=[]# 位置信息
-                text=""# 最终的text
-                lasttext=""# 检车前一个字符是否是"\n"
-                type_pos.append(str(start)) # 加入坐标的开始
-                tempt_type_pos=""
-                entity_type=e.type
-                for i in range(start,end):
-                    subt=bucket[i]# 拿到当前字符
-                    if subt=="\n": # 如果当前字符是"\n"
-                        if lasttext!="\n":# 如果之前不是"\n"，那么就是新的开始
-                            tempt_type_pos+=str(i)+";"
-                        text+=" "# "\n" 替换成 空格
-                    else:
-                        if lasttext=="\n": # 如果上一个字符 是"\n" 而当前字符不是 "\n" 那么就添加 新的开始位置
-                            tempt_type_pos+=str(i)
-                            type_pos.append(tempt_type_pos)
-                            tempt_type_pos=""# 初始化为空
-                        text+=subt
-                    lasttext=subt
-                type_pos.append(str(end))
-                ann_str+=entity_type+" "+" ".join(type_pos)+"\t"+text
-                ann_strs.append(ann_str)
-                index+=1
-        utils.saveToFile(os.path.join(path,self.doc_id+".ann"),ann_strs)
 
 
 
@@ -211,53 +159,23 @@ class doc(object):
 
 class simple(object):
     def __init__(self):
-        self.id="" # Id 目前定义的是 doc_id +"-" + w.start+"-"+ w.end
+        self.id="" #
+        self.is_relation=0
+        # 实体的位置，实体类型，                                   前一个词 pos，后一个词 pos
+
+
         self.words=[] # docToSimple 方法用的words
         self.inputWords=[] # 这是丢入模型的words
         self.labels=[] # 这里里面应该是entity 对象 注意这里的entity 的坐标 都是全局的坐标
         self.predict_labels=[] # 这里里面应该是entity 对象 注意这里的entity 的坐标 都是全局的坐标
 
-    # def setWordPredictLabel(self): # 这里吧预测的标签 写入 words
-    #     for w in self.words:
-    #         w.predict_label="O" # 初始化所有的w 注意这里的w 是simpale 的。
-    #     predict_labels_map={ entity.start:entity for entity in self.predict_labels}
-    #     for i,w in enumerate(self.words):
-    #         pos=w.pos
-    #         if pos in predict_labels_map.keys() :# 这里使用的是全局的 entitys
-    #             entity=predict_labels_map[pos]
-    #             type=entity.type
-    #             # text=entity.text
-    #             # end=i+len(text) # 这里文字可能对不上
-    #             end=i+entity.end-entity.start
-    #             if type not in typeMap.keys():
-    #                 continue # 这里如果遇到自定义的标注类型就直接跳过
-    #             w.predict_label="B-"+typeMap[type]
-    #             for  last_i in range(i+1,end):
-    #                 self.words[last_i].predict_label="I-"+typeMap[type]
 
 
 
-# search_entity=config["search_entity"]# 是一个map
-# search_entity_list=list(search_entity.keys())
-# search_entity_pattern="|".join(list(search_entity.keys()))
-# def searchEntityUseRule(samp):# 输入一个sample  search sample 下有没有 规则中出现的实体。
-#     words=list(filter(lambda x:x.text!="\n" and x.text!=" " and x.text!="\t",samp.words)) # 先排除掉 \n 空格 制表符 这些字符
-#     words_text="".join(list(map(lambda x:x.text,words)))
-#     match_result=re.finditer(search_entity_pattern,words_text)
-#     entity_list=[]
-#     doc_id="-".join(samp.id.split("-")[0:-2])
-#     for r in match_result:
-#         start=r.start()# 这里是删除换行，空格后的 字符串位置
-#         end=r.end()
-#         text=r.group()
-#         org_start=samp.words.index(words[start])
-#         org_end=samp.words.index(words[end - 1])# 这里拿到的是当前词的坐标。如果不-1 就拿到的不对
-#         org_text = "".join(list(map(lambda x: x.text, samp.words[org_start:org_end+1]))).replace("\n"," ")
-#         ent = entity("1", org_text, words[start].line_id, words[end - 1].line_id,
-#                                words[start].pos,  # 这里的entity id 设置为1， 在加入entity 的时候 重新设置。
-#                                words[end - 1].pos + 1, search_entity[text], doc_id)
-#         entity_list.append(ent)
-#     return entity_list
+
+
+
+
 
 
 
@@ -307,16 +225,22 @@ class entity(object):
             return True
         return False
 
-    def __init__(self,id,text,start_line_id,end_line_id,start,end,type,doc_id):
-        self.id=id
+    def __init__(self,id,text,pos,type,doc_id):
+        self.id=id# t序号
         self.text=text
-        self.start_line_id=start_line_id # 这四个一定要是 int 型 ，起始行的坐标
-        self.end_line_id=end_line_id# 结束行坐标
-        self.start=start # 这里都是全局的 坐标
-        self.end=end# 这里是全局的坐标 end 的坐标+1
+        self.pos=pos
         self.type=type
         self.doc_id=doc_id
 
+
+class relation(object):
+    def __init__(self,t_id,r_type,entity1,entity2,entity1_type,entity2_type):
+        self.id=t_id # 序号
+        self.entity1_type=entity1_type
+        self.entity2_type=entity2_type
+        self.relation_type=r_type
+        self.entity1=entity1
+        self.entity2=entity2
 
 
 
