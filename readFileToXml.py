@@ -2,7 +2,7 @@ import os
 from nltk.corpus import stopwords
 import re
 import numpy as np
-from doc_object import *
+from docObject import *
 import utils as utils
 
 
@@ -19,7 +19,10 @@ def get_type_pos(fp_type_pos):  # 这里获取 实体类型和实体位置 todo 
     position = []
     for p in pos_list:
         starts, ends = p.split(" ")
+        assert starts.isdigit()
+        assert ends.isdigit()
         position.append((starts, ends))
+
     return e_type, position
     # 返回列表元组
 
@@ -120,25 +123,25 @@ def creat_sentence_obj(doc):
         s.init()
 
 
-def creat_word_obj(doc):
-    for sent_obj in doc.sentences:
-        words_list, words_num = utils.count_words_in_each_sentence(sent_obj.text)
-        for word in words_list:
-            word_id = 0
-            word_text = word
-            # word_freq =
-            # word_in_which_sent =
-            # is_entit =
-            # belong2which_t_id =
-            # is_related_to_another_entity =
-            # ridtid =
-            # word_object = Word(word_id, word_text, word_freq, word_in_which_sent, is_entit, belong2which_t_id, is_related_to_another_entity, ridtid)
-            # d.words.append(word_object)
+# def creat_word_obj(doc):
+#     for sent_obj in doc.sentences:
+#         words_list, words_num = utils.count_words_in_each_sentence(sent_obj.text)
+#         for word in words_list:
+#             word_id = 0
+#             word_text = word
+#             # word_freq =
+#             # word_in_which_sent =
+#             # is_entit =
+#             # belong2which_t_id =
+#             # is_related_to_another_entity =
+#             # ridtid =
+#             # word_object = Word(word_id, word_text, word_freq, word_in_which_sent, is_entit, belong2which_t_id, is_related_to_another_entity, ridtid)
+#             # d.words.append(word_object)
 
 
 if __name__ == '__main__':
     # file_root_path = '../bioNLP-SeeDev/BioNLP-ST-2016_SeeDev-binary_train/'
-    file_root_path = 'E:/bioNLP-SeeDev/BioNLP-ST-2016_SeeDev-binary_train'
+    file_root_path = 'E:/down/关系抽取/BioNLP-ST-2016_SeeDev-binary_dev/'
     result = []
     for rt, dirs, files in os.walk(file_root_path):
         if len(files) > 0:
@@ -154,9 +157,10 @@ if __name__ == '__main__':
                 creat_entity_obj(rt, a1_file, d)
                 creat_relation_obj(rt, a2_file, d)
                 creat_sentence_obj(d)
-                creat_word_obj(d)
+                # creat_word_obj(d)
+                d.getSamples()
                 result.append(d)
     # sum(list(map(lambda x: len(x), list(map(lambda x: x.skip_sentence_relation, result)))
     if not os.path.exists('./saved_data'):  # 52 个跨句关系 总共1628个关系 630句话
         os.makedirs('./saved_data')
-    utils.dumpData4Gb(result, r'./saved_data/train.bin')
+    utils.dumpData4Gb(result, './saved_data/dev.bin')

@@ -6,9 +6,9 @@ import numpy as np
 import jieba
 import os
 import shutil
-import torch
+# import torch
 from nltk.corpus import stopwords
-from stanfordcorenlp import StanfordCoreNLP
+# from stanfordcorenlp import StanfordCoreNLP
 
 
 def read_file(path):
@@ -47,9 +47,9 @@ def split2sentence(d):
     return new_sents
 
 
-def count_words_in_each_sentence(sentence):
-    nlp = StanfordCoreNLP('E:\TOOLS\stanford-corenlp-full-2018-10-05', lang='en')
-    return nlp.word_tokenize(sentence), len(nlp.word_tokenize(sentence))
+# def count_words_in_each_sentence(sentence):
+#     nlp = StanfordCoreNLP('E:\TOOLS\stanford-corenlp-full-2018-10-05', lang='en')
+#     return nlp.word_tokenize(sentence), len(nlp.word_tokenize(sentence))
 
 
 def retrieve_entities(d):
@@ -85,3 +85,20 @@ def two_e_have_multi_r(ls, r2e_dict, doc_r_obj):
         if num == 2:
             multi_r_list.append((list(filter(lambda x: r2e_dict[x.id] == ele, doc_r_obj)), num))
     return multi_r_list
+
+
+
+def loadData(openPath):
+    with open(openPath, "rb", ) as file:
+        data=pickle.load(file)
+        return data
+
+
+def minibatchesNdArray(test_ids, test_input_ids, test_input_masks, test_segment_ids, test_labels,words, minibatch_size):
+    iterNum=len(test_ids)//minibatch_size
+    for i in range(iterNum):
+        start=i*minibatch_size
+        end=(i+1)*minibatch_size
+        yield test_ids[start:end],test_input_ids[start:end],test_input_masks[start:end],test_segment_ids[start:end],test_labels[start:end],words[start:end]
+
+

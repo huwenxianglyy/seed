@@ -12,7 +12,6 @@ class Doc(object):
         self.is_check = '0'
         self.file_name = ''
         self.is_train = '0'
-
         self.characters = []
         self.words = []
         self.sentences = []
@@ -26,6 +25,30 @@ class Doc(object):
         self.num_sentences = 0
         self.num_entities = 0
         self.num_relations = 0
+        self.samples=[]
+
+
+    def getSamples(self,window=1):
+
+        for s in self.sentences:
+            if len(s.entitys)>1:
+                entity_couple=set()
+                for r in s.relations:
+                    p_sample=Sample(r.entity1,r.entity2,s,r)
+                    entity_couple.add((r.entity1.id,r.entity2.id))
+                    entity_couple.add((r.entity2.id,r.entity1.id))
+                    self.samples.append(p_sample)
+                for e1 in s.entitys:
+                    for e2 in s.entitys:
+                        if e1==e2 or (e1.id,e2.id) in entity_couple:continue
+                        n_sample = Sample(e1,e2, s,None)
+                        entity_couple.add((e1.id,e2.id))
+                        entity_couple.add((e2.id,e1.id))
+                        self.samples.append(n_sample)
+
+
+
+
 
     def lines2characters(self):  # 把line中的character 加到characters中
         index = 0
@@ -107,8 +130,8 @@ class Entity(object):
 class Relation(object):
     def __init__(self, r_id, r_type, e1, e2, e1_ty, e2_ty):
         self.id = r_id
-        self.entity1_type = e1_ty
-        self.entity2_type = e2_ty
+        self.entity1_type = e1_ty # 在关系中实体的类型
+        self.entity2_type = e2_ty # 在关系中实体的类型
         self.relation_type = r_type
         self.entity1 = e1
         self.entity2 = e2
@@ -118,8 +141,13 @@ class Relation(object):
 
 
 class Sample(object):
-    def __init__(self):
-        pass
+    def __init__(self,entity1,entity2,sentence,relation):
+        self.entity1=entity1
+        self.entity2=entity2
+        self.sentence=sentence
+        self.relation=relation
+
+
 
 
 class Dictionary(object):
