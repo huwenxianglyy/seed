@@ -4,6 +4,7 @@ import re
 import numpy as np
 from docObject import *
 import utils as utils
+from config import config
 
 
 def get_type_pos(fp_type_pos):  # 这里获取 实体类型和实体位置 todo  这里获取信息 要注意 标签的单词之间有空格得情况  可以判断 t_p得长度，根据不同长度做处理
@@ -36,15 +37,14 @@ def get_relation_and_entityid(line):
     return rela_type, entity1_type, entity1_id, entity2_type, entity2_id
 
 
-def creat_line_obj(rootp, a1_f, doc):
-    # 创建line对象和doc对象
-    temp_lines = []
+def creat_character_obj(rootp, a1_f, doc):
+    # 创建character对象
     lines = utils.read_file(os.path.join(rootp, a1_f))
     line_objs = list(map(lambda x: Line(x[0], doc.doc_id, x[1]), enumerate(lines)))
     doc.lines = line_objs
     doc.lines2characters()
     assert len(doc.characters) == len("\n".join(lines))
-    # doc对象创建完成, 并且把line对象转化为character对象
+    # 把line对象转化为character对象
 
 
 def creat_entity_obj(rootp, a1_f, doc):
@@ -123,25 +123,32 @@ def creat_sentence_obj(doc):
         s.init()
 
 
-# def creat_word_obj(doc):
-#     for sent_obj in doc.sentences:
-#         words_list, words_num = utils.count_words_in_each_sentence(sent_obj.text)
-#         for word in words_list:
-#             word_id = 0
-#             word_text = word
-#             # word_freq =
-#             # word_in_which_sent =
-#             # is_entit =
-#             # belong2which_t_id =
-#             # is_related_to_another_entity =
-#             # ridtid =
-#             # word_object = Word(word_id, word_text, word_freq, word_in_which_sent, is_entit, belong2which_t_id, is_related_to_another_entity, ridtid)
-#             # d.words.append(word_object)
+def creat_word_obj(doc):
+    for sent_obj in doc.sentences:
+        words_list = utils.clean_str(sent_obj.text).split()
+
+        words_dict = WordsDict()
+        words_dict(words_list)
+        words_dict.convert()
+        doc.word2id = words_dict.word2id
+        doc.id2word = words_dict.id2word
+
+        for word in words_list:
+            word_id = words_dict.word2id[word]
+            word_text = word
+            # word_freq =
+            # word_in_which_sent =
+            # is_entit =
+            # belong2which_t_id =
+            # is_related_to_another_entity =
+            # ridtid =
+            word_object = Word(word_id, word_text)
+            d.words.append(word_object)
 
 
 if __name__ == '__main__':
-    # file_root_path = '../bioNLP-SeeDev/BioNLP-ST-2016_SeeDev-binary_train/'
-    file_root_path = 'E:/down/关系抽取/BioNLP-ST-2016_SeeDev-binary_dev/'
+    file_root_path = '../bioNLP-SeeDev/BioNLP-ST-2016_SeeDev-binary_train/'
+    # file_root_path = 'E:/bioNLP-SeeDev/BioNLP-ST-2016_SeeDev-binary_dev'
     result = []
     for rt, dirs, files in os.walk(file_root_path):
         if len(files) > 0:
@@ -153,14 +160,14 @@ if __name__ == '__main__':
                 d = Doc()
                 d.doc_id = os.path.splitext(f)[0]
 
-                creat_line_obj(rt, f, d)
+                creat_character_obj(rt, f, d)
                 creat_entity_obj(rt, a1_file, d)
                 creat_relation_obj(rt, a2_file, d)
                 creat_sentence_obj(d)
-                # creat_word_obj(d)
+                creat_word_obj(d)
                 d.getSamples()
                 result.append(d)
     # sum(list(map(lambda x: len(x), list(map(lambda x: x.skip_sentence_relation, result)))
     if not os.path.exists('./saved_data'):  # 52 个跨句关系 总共1628个关系 630句话
         os.makedirs('./saved_data')
-    utils.dumpData4Gb(result, './saved_data/dev.bin')
+    utils.dumpData4Gb(result, './saved_data/train.bin')

@@ -2,6 +2,7 @@ import numpy
 import re
 import os
 import collections
+from config import config
 
 
 class Doc(object):
@@ -25,30 +26,28 @@ class Doc(object):
         self.num_sentences = 0
         self.num_entities = 0
         self.num_relations = 0
-        self.samples=[]
+        self.word2id = {}
+        self.id2word = {}
 
-
-    def getSamples(self,window=1):
-
+    def getSamples(self, window=1):
+        sample_id = 0
         for s in self.sentences:
-            if len(s.entitys)>1:
-                entity_couple=set()
+            if len(s.entitys) > 1:
+                entity_couple = set()
                 for r in s.relations:
-                    p_sample=Sample(r.entity1,r.entity2,s,r)
-                    entity_couple.add((r.entity1.id,r.entity2.id))
-                    entity_couple.add((r.entity2.id,r.entity1.id))
+                    p_sample = Sample(sample_id ,r.entity1, r.entity2, s, r)
+                    entity_couple.add((r.entity1.id, r.entity2.id))
+                    entity_couple.add((r.entity2.id, r.entity1.id))
                     self.samples.append(p_sample)
+                    sample_id += 1
                 for e1 in s.entitys:
                     for e2 in s.entitys:
-                        if e1==e2 or (e1.id,e2.id) in entity_couple:continue
-                        n_sample = Sample(e1,e2, s,None)
-                        entity_couple.add((e1.id,e2.id))
-                        entity_couple.add((e2.id,e1.id))
+                        if e1 == e2 or (e1.id, e2.id) in entity_couple: continue
+                        n_sample = Sample(sample_id, e1, e2, s, None)
+                        entity_couple.add((e1.id, e2.id))
+                        entity_couple.add((e2.id, e1.id))
                         self.samples.append(n_sample)
-
-
-
-
+                        sample_id += 1
 
     def lines2characters(self):  # 把line中的character 加到characters中
         index = 0
@@ -76,16 +75,16 @@ class Character(object):
 
 
 class Word(object):
-    def __init__(self, w_id, w_text, w_freq, w_sid, is_entity, belong2t_id, have_rela, ridtid):
+    def __init__(self, w_id, w_text):
         # id, is_entity, start_end_index, 每个单词在文档中出现了几次等等
         self.ID = w_id
         self.text = w_text
-        self.words_freq_in_doc = w_freq
-        self.words_sentID = w_sid
-        self.is_entity = is_entity
-        self.belong2t_id = belong2t_id  # 属于哪个实体，该实体的id
-        self.have_relation = have_rela
-        self.ridtid = ridtid
+        # self.words_freq_in_doc = w_freq
+        # self.words_sentID = w_sid
+        # self.is_entity = is_entity
+        # self.belong2t_id = belong2t_id  # 属于哪个实体，该实体的id
+        # self.have_relation = have_rela
+        # self.ridtid = ridtid
 
 
 class Sentence(object):
@@ -130,8 +129,8 @@ class Entity(object):
 class Relation(object):
     def __init__(self, r_id, r_type, e1, e2, e1_ty, e2_ty):
         self.id = r_id
-        self.entity1_type = e1_ty # 在关系中实体的类型
-        self.entity2_type = e2_ty # 在关系中实体的类型
+        self.entity1_type = e1_ty  # 在关系中实体的类型
+        self.entity2_type = e2_ty  # 在关系中实体的类型
         self.relation_type = r_type
         self.entity1 = e1
         self.entity2 = e2
@@ -141,13 +140,12 @@ class Relation(object):
 
 
 class Sample(object):
-    def __init__(self,entity1,entity2,sentence,relation):
-        self.entity1=entity1
-        self.entity2=entity2
-        self.sentence=sentence
-        self.relation=relation
-
-
+    def __init__(self, sam_id, entity1, entity2, sentence, relation):
+        self.id = sam_id
+        self.entity1 = entity1
+        self.entity2 = entity2
+        self.sentence = sentence
+        self.relation = relation
 
 
 class Dictionary(object):
@@ -169,11 +167,10 @@ class Dictionary(object):
 
 class WordsDict(Dictionary):
     def __init__(self):
-        super(WordsDict, self).__init__(WORD2ID, len(WORD2ID))
+        super(WordsDict, self).__init__(config['words_dict'], len(config['words_dict']))
 
     def __call__(self, sents):
-        words = set([word for sent in sents for word in sent])
-        for word in words:
+        for word in sents:
             self.add_word(word)
 
 

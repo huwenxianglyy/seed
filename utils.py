@@ -2,14 +2,18 @@ import json
 import pickle
 import re
 from collections import Counter
+from config import *
 import numpy as np
 import jieba
 import os
 import shutil
 # import torch
 from nltk.corpus import stopwords
-# from stanfordcorenlp import StanfordCoreNLP
+import nltk
+from stanfordcorenlp import StanfordCoreNLP
 
+
+args = ConfigParameter()
 
 def read_file(path):
     with open(path, "r", encoding='utf-8') as f1:
@@ -87,18 +91,108 @@ def two_e_have_multi_r(ls, r2e_dict, doc_r_obj):
     return multi_r_list
 
 
+# def count_words_in_each_sentence(sents_text):
+#     nltk.download('punkt')
+#     text = nltk.word_tokenize(sents_text)
+#     # nlp = StanfordCoreNLP('E:\TOOLS\stanford-corenlp-full-2018-10-05', lang='en')
+#     # return nlp.word_tokenize(sents_text), len(nlp.word_tokenize(sents_text))
+#     return text, len(text)
+
+
+def clean_str(string):
+    """
+    Tokenization/string cleaning for all datasets except for SST.
+    Original taken from https://github.com/yoonkim/CNN_sentence/blob/master/process_data.py
+    """
+    string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
+    string = re.sub(r"\'s", " \'s", string)
+    string = re.sub(r"\'ve", " \'ve", string)
+    string = re.sub(r"n\'t", " n\'t", string)
+    string = re.sub(r"\'re", " \'re", string)
+    string = re.sub(r"\'d", " \'d", string)
+    string = re.sub(r"\'ll", " \'ll", string)
+    string = re.sub(r",", " , ", string)
+    string = re.sub(r"!", " ! ", string)
+    string = re.sub(r"\(", " \( ", string)
+    string = re.sub(r"\)", " \) ", string)
+    string = re.sub(r"\?", " \? ", string)
+    string = re.sub(r"\s{2,}", " ", string)
+    return string.strip().lower()
+
 
 def loadData(openPath):
     with open(openPath, "rb", ) as file:
-        data=pickle.load(file)
+        data = pickle.load(file)
         return data
 
 
-def minibatchesNdArray(test_ids, test_input_ids, test_input_masks, test_segment_ids, test_labels,words, minibatch_size):
-    iterNum=len(test_ids)//minibatch_size
+def minibatchesNdArray(test_ids, test_input_ids, test_input_masks, test_segment_ids, test_labels, words,
+                       minibatch_size):
+    iterNum = len(test_ids) // minibatch_size
     for i in range(iterNum):
-        start=i*minibatch_size
-        end=(i+1)*minibatch_size
-        yield test_ids[start:end],test_input_ids[start:end],test_input_masks[start:end],test_segment_ids[start:end],test_labels[start:end],words[start:end]
+        start = i * minibatch_size
+        end = (i + 1) * minibatch_size
+        yield test_ids[start:end], \
+              test_input_ids[start:end], \
+              test_input_masks[start:end], \
+              test_segment_ids[start:end], \
+              test_labels[start:end], \
+              words[start:end]
 
 
+def pos_index(x):
+
+    if x < -args.pos_limit:
+        return 0
+    if x >= -args.pos_limit and x <= args.pos_limit:
+        return x + args.pos_limit
+    if x > args.pos_limit:
+        return 2 * args.pos_limit
+
+
+def get_w_pos_in_e(pos, en_pos, lens):
+    assert len(en_pos) > 0
+    for i in range(lens):
+        if len(en_pos) == 1:
+            pos[i] = pos_index(i - en_pos[0])
+        else:
+            if i < en_pos[0]:
+                pos[i] = pos_index(i - en_pos[0])
+            if i > en_pos[-1]:
+                pos[i] = pos_index(i - en_pos[-1])
+        if -1 in pos:
+            w_pos_in_e = [i for i, x in enumerate(pos) if x == -1]
+            ls = list(range(-len(w_pos_in_e), 0))
+            for z, p in enumerate(w_pos_in_e):
+                pos[p] = ls[z]
+    return pos
+
+
+def load_word_vec(self):
+    global args
+    wordMap = {}
+    wordMap['PAD'] = len(wordMap)
+    wordMap['UNK'] = len(wordMap)
+    word_embed = []
+    for line in tqdm(open(self.embedding_file, encoding='utf-8')):
+        content = line.strip().split()
+        if len(content) != self.embedding_size + 1:
+            continue
+        wordMap[content[0]] = len(wordMap)
+        word_embed.append(np.asarray(content[1:], dtype=np.float32))
+        # word_embed 列表，列表中每个元素是np数组，np数组的shape=(300,)
+
+    word_embed = np.stack(word_embed)
+    # word_embed变为np数组，shape=(372909, 300)
+    embed_mean, embed_std = word_embed.mean(), word_embed.std()
+
+    pad_embed = np.random.normal(embed_mean, embed_std, (2, self.embedding_size))
+    word_embed = np.concatenate((pad_embed, word_embed), axis=0)
+    word_embed = word_embed.astype(np.float32)
+    # wordMap：一个词向量中的字典，word2id
+    # word_embed：一个词向量np数组，shape(words_size, 300)
+    # <class 'numpy.ndarray'>
+    # (372911, 300)
+    #
+    # pickle.dump(word_embed, open('./embedding/embedding.pickle', 'wb'))
+    return wordMap, word_embed, word_embed.shape[0]

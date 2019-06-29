@@ -2,13 +2,10 @@ import tensorflow as  tf
 from tensorflow.contrib import rnn
 
 
-
-
-
 class entity_attention_model(object):
-    def __init__(self,input_e1,input_e2,input_sentence,input_position,
-                 input_e1_start,input_e2_start,input_e1_end,input_e2_end,
-                 position_emb,position_diff_emb,word_emb,seq_len,is_train):
+    def __init__(self, input_e1, input_e2, input_sentence, input_position,
+                 input_e1_start, input_e2_start, input_e1_end, input_e2_end,
+                 position_emb, position_diff_emb, word_emb, seq_len, is_train):
         '''
         :param input_e1:
         :param input_e2:
@@ -23,37 +20,31 @@ class entity_attention_model(object):
         :param word_emb: word_emb
         '''
 
+        self.input_e1 = input_e1
+        self.input_e2 = input_e2
+        self.input_sentence = input_sentence
+        self.input_position = input_position
+        self.input_e1_start = input_e1_start
+        self.input_e2_start = input_e2_start
+        self.input_e1_end = input_e1_end
+        self.input_e2_end = input_e2_end
+        self.position_emb = position_emb
+        self.position_diff_emb = position_diff_emb
+        self.word_emb = word_emb
+        self.seq_len = seq_len
 
-        self.input_e1=input_e1
-        self.input_e2=input_e2
-        self.input_sentence=input_sentence
-        self.input_position=input_position
-        self.input_e1_start=input_e1_start
-        self.input_e2_start=input_e2_start
-        self.input_e1_end=input_e1_end
-        self.input_e2_end=input_e2_end
-        self.position_emb=position_emb
-        self.position_diff_emb=position_diff_emb
-        self.word_emb=word_emb
-        self.seq_len=seq_len
-
-
-
-        self.cell_type="lstm"
-        self.is_training=is_train
-        self.hidden_unit=512
-        self.droupout_rate=0.7
+        self.cell_type = "lstm"
+        self.is_training = is_train
+        self.hidden_unit = 512
+        self.droupout_rate = 0.7
 
         self.create()
 
-
     def create(self):
-        self.emb_sentence=tf.nn.embedding_lookup(self.word_emb,self.input_sentence) # [batch,156,300]
-        self.emb_position=tf.nn.embedding_lookup(self.position_emb,self.input_position) # [batch,156,10]
-        self.senAndPosition=tf.concat(self.emb_sentence,self.position_emb,axis=-1)
+        self.emb_sentence = tf.nn.embedding_lookup(self.word_emb, self.input_sentence)  # [batch,156,300]
+        self.emb_position = tf.nn.embedding_lookup(self.position_emb, self.input_position)  # [batch,156,10]
+        self.senAndPosition = tf.concat(self.emb_sentence, self.position_emb, axis=-1)
         with tf.variable_scope('rnn_layer'):
-
-
             cell_fw = self._witch_cell()
             cell_bw = self._witch_cell()
             if self.droupout_rate is not None and self.is_training:
@@ -81,4 +72,3 @@ class entity_attention_model(object):
         if self.droupout_rate is not None and self.is_training:
             cell_tmp = rnn.DropoutWrapper(cell_tmp, output_keep_prob=self.droupout_rate)
         return cell_tmp
-
