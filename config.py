@@ -33,12 +33,7 @@ class ConfigParameter (object):
         self.relation_dim=50
         self.entity_type_dim=50
 
-
-
-
-
         # 这里加入词向量的操作
-
         self.PAD = 'PAD'
         self.UNK = 'UNK'
 
