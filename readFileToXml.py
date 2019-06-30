@@ -147,7 +147,8 @@ def creat_word_obj(doc):
 
 
 if __name__ == '__main__':
-    file_root_path = '../bioNLP-SeeDev/BioNLP-ST-2016_SeeDev-binary_train/'
+    file_root_path = 'D:/git/seed/BioNLP-ST-2016_SeeDev-binary_train/'
+    # file_root_path = 'D:/git/seed/BioNLP-ST-2016_SeeDev-binary_dev/'
     # file_root_path = 'E:/bioNLP-SeeDev/BioNLP-ST-2016_SeeDev-binary_dev'
     result = []
     for rt, dirs, files in os.walk(file_root_path):

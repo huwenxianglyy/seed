@@ -10,7 +10,7 @@ import shutil
 # import torch
 from nltk.corpus import stopwords
 import nltk
-from stanfordcorenlp import StanfordCoreNLP
+# from stanfordcorenlp import StanfordCoreNLP
 
 
 args = ConfigParameter()
@@ -113,11 +113,11 @@ def clean_str(string):
     string = re.sub(r"\'ll", " \'ll", string)
     string = re.sub(r",", " , ", string)
     string = re.sub(r"!", " ! ", string)
-    string = re.sub(r"\(", " \( ", string)
-    string = re.sub(r"\)", " \) ", string)
-    string = re.sub(r"\?", " \? ", string)
+    string = re.sub(r"\(", " ( ", string)
+    string = re.sub(r"\)", " ) ", string)
+    string = re.sub(r"\?", " ? ", string)
     string = re.sub(r"\s{2,}", " ", string)
-    return string.strip().lower()
+    return string.strip() # .lower()
 
 
 def loadData(openPath):
@@ -151,6 +151,7 @@ def pos_index(x):
 
 
 def get_w_pos_in_e(pos, en_pos, lens):
+
     assert len(en_pos) > 0
     for i in range(lens):
         if len(en_pos) == 1:
