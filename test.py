@@ -1,4 +1,8 @@
+
+import numpy as np
+print(1)
 import utils
+word2Vec_text = utils.read_file('d:/glove.6B.300d.txt')
 
 result = utils.loadData("./saved_data/train.bin")
 result += utils.loadData("./saved_data/dev.bin")

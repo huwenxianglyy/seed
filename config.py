@@ -1,4 +1,4 @@
-
+import utils
 import numpy as np
 
 
@@ -10,7 +10,7 @@ def read_file(path):
 class ConfigParameter (object):
     def __init__(self):
         self.pre_embed = True
-        self.num_epochs = 100
+        self.num_epochs = 5000
         self.batch_size = 64
         self.sen_len = 156    # 最大句子长度
         self.max_position_len = 156 # 这个暂时没用。
@@ -21,10 +21,11 @@ class ConfigParameter (object):
         self.pos_limit = 60    # 最大位置距离长度
         self.window = 3
         self.dropout = 0.5
-        self.lr = 1e-3
+        self.lr = 1e-4
         self.min_word_frequency = 2
         # self.embedding_file = 'E:/TOOLS/word2vec/eng_google/glove.6B.300d.txt'
-        self.embedding_file = 'd:/glove.6B.300d.txt'
+        # self.embedding_file = 'd:/glove.6B.300d.txt'
+        self.embedding_file = '/home/huwenxiang/deeplearn/词向量/英文/谷歌/glove.6B.300d.txt'
         self.train_data_path = '../bioNLP-SeeDev/BioNLP-ST-2016_SeeDev-binary_train'
         self.dev_data_path = '../bioNLP-SeeDev/BioNLP-ST-2016_SeeDev-binary_dev'
         self.save_data_path = './saved_data'
@@ -37,24 +38,15 @@ class ConfigParameter (object):
 
 
         # 这里加入词向量的操作
-        # self.word2Vec_text=read_file(self.embedding_file)
-        self.word2Vec_text=[]
+
         self.PAD = 'PAD'
         self.UNK = 'UNK'
-        self.word2Id={}
-        self.Id2Word={}
-        self.word2Vec=[]
-        self.word_dim=300
-        for i,w in enumerate(self.word2Vec_text):
-            word,vec=w.split()[0],w.split()[1:]
-            self.word2Id[word]=i
-            self.word2Vec.append(vec)
-            self.Id2Word[i]=word
 
-        self.word2Id[self.PAD] = len(self.word2Vec)
-        self.word2Vec.append([0] * 300)# 这里用的300维的向量
-        self.word2Id[self.UNK] = len(self.word2Vec)
-        self.word2Vec.append(np.random.normal(0, 1, 300).tolist())
+        # self.word2Vec_text = read_file(self.embedding_file)
+
+        self.word_dim=300
+        self.word2Vec, self.word2Id, self.Id2Word=utils.loadData("/home/huwenxiang/deeplearn/seed/saved_data/word2vec.bin")
+        self.word2Vec=np.array(self.word2Vec,dtype=np.float32)
 
 
 args = ConfigParameter()

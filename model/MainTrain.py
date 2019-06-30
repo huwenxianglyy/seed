@@ -7,13 +7,12 @@ import os
 import random
 import utils
 import numpy as np
-from tqdm import tqdm
 from config import *
 from sklearn.metrics import classification_report
 import re
 import collections
 import tqdm
-
+from  sklearn.metrics import  classification_report
 
 
 
@@ -64,6 +63,7 @@ def createInputForModel(data,samples):
     entity2_type=[]
     relation_entity1_type=[]
     relation_entity2_type=[]
+    orig_words=[]
 
 
     word2idIndex=args.word2Id
@@ -75,6 +75,18 @@ def createInputForModel(data,samples):
         en1 = utils.clean_str(sample.entity1.text).split()
         en2 = utils.clean_str(sample.entity2.text).split()
         r_obj, s_obj = sample.relation, sample.sentence
+        relation_type=0
+
+
+        # 这里进行采样
+        if np.random.rand(1)>0.02 and r_obj is None:
+            continue
+
+
+
+
+
+
         bucket=collections.OrderedDict()
         entity1_type.append(config["entity_type2id"][sample.entity1.type])
         entity2_type.append(config["entity_type2id"][sample.entity2.type])
@@ -116,8 +128,6 @@ def createInputForModel(data,samples):
         try:
             e1_temp=words[words_pos[int(e1_start)]:]
             e2_temp=words[words_pos[int(e2_start)]:]
-
-
         except:
             error_sample_num+=1
             print(error_sample_num)
@@ -126,18 +136,17 @@ def createInputForModel(data,samples):
 
 
 
-        relation_type=0
         if r_obj is not None:
             relation_type=config["relation_type2id"][r_obj.relation_type]
         real_relation.append(relation_type)
 
-
+        orig_words.append(words)
         word_indexs=[]
         for i in range(args.sen_len):
             if i<len(words):
                 word_indexs.append(word2idIndex.get(words[i], word2idIndex[args.UNK]))
             else:
-                word_indexs.append(word2idIndex.get(word2idIndex[args.PAD]))
+                word_indexs.append(word2idIndex.get(args.PAD))
         sentences.append(word_indexs)
         sentences_len.append(len(words))
 
@@ -148,7 +157,7 @@ def createInputForModel(data,samples):
             if i < len(en1):
                 entity1_index.append(word2idIndex.get(en1[i], word2idIndex[args.UNK]))
             else:
-                entity1_index.append(word2idIndex.get(word2idIndex[args.PAD]))
+                entity1_index.append(word2idIndex.get(args.PAD))
 
         entity1.append(entity1_index)
 
@@ -156,7 +165,7 @@ def createInputForModel(data,samples):
             if i < len(en2):
                 entity2_index.append(word2idIndex.get(en2[i], word2idIndex[args.UNK]))
             else:
-                entity2_index.append(word2idIndex.get(word2idIndex[args.PAD]))
+                entity2_index.append(word2idIndex.get(args.PAD))
         entity2.append(entity2_index)
 
         # 下面加入位置信息
@@ -205,7 +214,7 @@ def createInputForModel(data,samples):
 
 
 if __name__ == '__main__':
-    set_seed()
+    # set_seed()
     # embedd=utils.read_file(args.embedding_file)
 
     os.environ['CUDA_VISIBLE_DEVICES'] = '0'
@@ -225,11 +234,15 @@ if __name__ == '__main__':
 
 
 
-
-    # get_feed(train, train_sample)
     train_sentences, train_entity1,train_entity2,train_real_relation,train_e1_pos,train_e2_pos,train_seq_len,train_entity1_type,train_entitiy2_type,train_r_e1_type,train_r_e2_type=createInputForModel(train, train_sample)
-    dev_sentences, dev_entity1,dev_entity2,dev_real_relation,dev_e1_pos,dev_e2_pos,dev_seq_len,dev_entity1_type,dev_entitiy2_type,dev_r_e1_type,dev_r_e2_type=createInputForModel(train, dev_sample)
+    # train_sentences, train_entity1,train_entity2,train_real_relation,train_e1_pos,train_e2_pos,train_seq_len,train_entity1_type,train_entitiy2_type,train_r_e1_type,train_r_e2_type\
+    #     =utils.loadData("../saved_data/train_input.bin")
 
+    dev_sentences, dev_entity1,dev_entity2,dev_real_relation,dev_e1_pos,dev_e2_pos,dev_seq_len,dev_entity1_type,dev_entitiy2_type,dev_r_e1_type,dev_r_e2_type=createInputForModel(train, dev_sample)
+    # dev_sentences, dev_entity1,dev_entity2,dev_real_relation,dev_e1_pos,dev_e2_pos,dev_seq_len,dev_entity1_type,dev_entitiy2_type,dev_r_e1_type,dev_r_e2_type\
+    #     =utils.loadData("../saved_data/dev_input.bin")
+
+    # "../saved_data/train_input.bin"
     input_e1 = tf.placeholder(shape=[None,5],dtype=tf.int32)
     input_e2 = tf.placeholder(shape=[None,5],dtype=tf.int32)
     input_sentence = tf.placeholder(shape=[None,args.sen_len],dtype=tf.int32)
@@ -238,21 +251,23 @@ if __name__ == '__main__':
     input_e2_position=tf.placeholder(shape=[None,args.sen_len],dtype=tf.int32)
     input_e1_type=tf.placeholder(shape=[None,1],dtype=tf.int32)
     input_e2_type=tf.placeholder(shape=[None,1],dtype=tf.int32)
+
     input_e1_r_type=tf.placeholder(shape=[None,1],dtype=tf.int32)
     input_e2_r_type=tf.placeholder(shape=[None,1],dtype=tf.int32)
-    seq_len = tf.placeholder(shape=[None,1],dtype=tf.int32)
-    input_realtion = tf.placeholder(shape=[None,1],dtype=tf.int32)
+
+    seq_len = tf.placeholder(shape=[None],dtype=tf.int32)
+    input_realtion = tf.placeholder(shape=[None],dtype=tf.int32)
 
 
 
 
     # 下面建立各种embedding
     position_diff_emb = tf.get_variable('pos1_embedding',                               # 位置向量
-                                     [args.pos_limit*2, args.pos_dim], trainable=False) # 后期可以多设一个Pad 向量，全部为0
+                                     [args.pos_limit*2, args.pos_dim], trainable=True) # 后期可以多设一个Pad 向量，全部为0
                                                                                         # 后期可以 设置pos1 和 pos2 来表示到实体1的距离和实体2的距离
     word_emb =  tf.get_variable(initializer=args.word2Vec,
-                                         name='word_embedding',trainable=False)
-    relation_emb=tf.get_variable(shape=[len(config["relation_type"]),args.relation_dim],name='relation_emb',trainable=False)
+                                         name='word_embedding',dtype=tf.float32,trainable=True)
+    relation_emb=tf.get_variable(shape=[len(config["relation_type"]),args.relation_dim],name='relation_emb',trainable=True)
 
 
 
@@ -262,7 +277,7 @@ if __name__ == '__main__':
 
 
     def get_feed(sentences=None, entity1=None,entity2=None,
-                 e1_pos=None,e2_pos=None,seq_len=None,entity1_type=None,
+                 e1_pos=None,e2_pos=None,entity1_type=None,
                  entitiy2_type=None,r_e1_type=None,r_e2_type=None,sentence_len=None,real_relation=None):
         # 可以feed的 变量
         # input_e1
@@ -277,15 +292,18 @@ if __name__ == '__main__':
         # seq_len
         # input_realtion
 
+        entity1_type=np.reshape(entity1_type,[-1,1])
+        entitiy2_type=np.reshape(entitiy2_type,[-1,1])
+
         if real_relation is None:
             feed = {input_sentence: sentences,input_e1:entity1,input_e2:entity2,
-                    input_e1_position: e1_pos, input_e2_position: e2_pos,seq_len:sentence_len,
+                    input_e1_position: e1_pos, input_e2_position: e2_pos,
                     input_e1_type:entity1_type,input_e2_type:entitiy2_type
                     }
 
         else:
             feed = {input_sentence: sentences, input_e1: entity1, input_e2: entity2,
-                    input_e1_position: e1_pos, input_e2_position: e2_pos, seq_len: sentence_len,
+                    input_e1_position: e1_pos, input_e2_position: e2_pos,
                     input_e1_type: entity1_type, input_e2_type: entitiy2_type,
                     input_realtion:real_relation
                     }
@@ -301,23 +319,24 @@ if __name__ == '__main__':
                   position_diff_emb, word_emb,entity_type_emb, seq_len,True)
 
     outputs=model.outputs_final
-    full_c=tf.layers.Dense(config["relation_type"])
+    full_c=tf.layers.Dense(len(config["relation_type"]))
     logits=full_c(outputs)
+
     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=input_realtion, name="soft_loss")
     total_loss = tf.reduce_mean(loss, name="loss")
 
 
     predict = tf.argmax(tf.nn.softmax(logits), axis=1, name="predictions")
-    acc = tf.reduce_mean(tf.cast(tf.equal(input_realtion, tf.cast(predict, dtype=tf.int64)), "float"), name="accuracy")
+    acc = tf.reduce_mean(tf.cast(tf.equal(input_realtion, tf.cast(predict, dtype=tf.int32)), "float"), name="accuracy")
 
 
     train_op = tf.train.AdamOptimizer(args.lr).minimize(total_loss)
 
 
     with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer)
+        sess.run(tf.global_variables_initializer())
         for train_step in range(args.num_epochs):
-            shuffIndex = np.random.permutation(np.arange(len(train_sample)))
+            shuffIndex = np.random.permutation(np.arange(len(train_real_relation)))
             shuffIndex = shuffIndex[0:args.batch_size]
 
             feed = get_feed(real_relation=train_real_relation[shuffIndex], sentences=train_sentences[shuffIndex],
@@ -326,7 +345,21 @@ if __name__ == '__main__':
                             ,entity1_type=train_entity1_type[shuffIndex],
                             entitiy2_type=train_entitiy2_type[shuffIndex],sentence_len=train_seq_len[shuffIndex])
 
-            acc, total_loss=sess.run([train_op,acc,total_loss],feed_dict=feed)
+            _,p,a, l=sess.run([train_op,predict,acc,total_loss],feed_dict=feed)
 
+            if train_step>0 and train_step%100==0:
+                print("训练集损失函数值是:%f,准确率是:%f" % (l, a))
+                print(classification_report(train_real_relation[shuffIndex], p))
 
+                shuffIndex = np.random.permutation(np.arange(len(dev_real_relation)))
+                shuffIndex = shuffIndex[0:300]
+                feed = get_feed(real_relation=dev_real_relation[shuffIndex], sentences=dev_sentences[shuffIndex],
+                                e1_pos=dev_e1_pos[shuffIndex], e2_pos=dev_e2_pos[shuffIndex],
+                                entity1=dev_entity1[shuffIndex], entity2=dev_entity2[shuffIndex]
+                                , entity1_type=dev_entity1_type[shuffIndex],
+                                entitiy2_type=dev_entitiy2_type[shuffIndex], sentence_len=dev_seq_len[shuffIndex])
+
+                p,a, l = sess.run([ predict,acc, total_loss], feed_dict=feed)
+                print("测试集损失函数值是:%f,准确率是:%f"%(l,a))
+                print(classification_report(dev_real_relation[shuffIndex],p))
 
