@@ -10,8 +10,8 @@ def read_file(path):
 class ConfigParameter (object):
     def __init__(self):
         self.pre_embed = True
-        self.num_epochs = 5000
-        self.batch_size = 64
+        self.num_epochs = 10000
+        self.batch_size = 300
         self.sen_len = 156    # 最大句子长度
         self.max_position_len = 156 # 这个暂时没用。
         self.embedding_size = 300
@@ -20,8 +20,8 @@ class ConfigParameter (object):
         self.pos_dim = 10
         self.pos_limit = 60    # 最大位置距离长度
         self.window = 3
-        self.dropout = 0.5
-        self.lr = 1e-4
+        self.dropout = 0.7
+        self.lr = 1e-3
         self.min_word_frequency = 2
         # self.embedding_file = 'E:/TOOLS/word2vec/eng_google/glove.6B.300d.txt'
         # self.embedding_file = 'd:/glove.6B.300d.txt'
@@ -32,6 +32,7 @@ class ConfigParameter (object):
         self.entity_len=5# 这里是entity 最大长度
         self.relation_dim=50
         self.entity_type_dim=50
+        self.log_root_path="/home/huwenxiang/deeplearn/seed/saved_data/model"# 模型保存地址
 
         # 这里加入词向量的操作
         self.PAD = 'PAD'

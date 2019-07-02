@@ -68,17 +68,27 @@ class entity_attention_model(object):
                                      initializer=tf.random_normal_initializer())
             e1_output = tf.nn.conv1d(self.e1_emb, kernel, 1, 'VALID')  # 这里的形状应该是【N，5,50】
 
+            e1_output = tf.nn.relu(e1_output)
+
             e1_output = tf.layers.max_pooling1d(e1_output, args.entity_len, strides=1, padding="valid")
             e1_output = tf.reshape(e1_output, [-1, args.filter_size])  # tf.squeeze()
-            self.e1_output = tf.concat([e1_output,self.e1_type_emb], axis=-1)  # tf.squeeze()
 
-
+            if self.is_training:
+                self.e1_output=tf.nn.dropout(tf.concat([e1_output,self.e1_type_emb], axis=-1),args.dropout)
+            else:
+                self.e1_output = tf.concat([e1_output,self.e1_type_emb], axis=-1)  # tf.squeeze()
 
 
             e2_output = tf.nn.conv1d(self.e2_emb, kernel, 1, 'VALID')  # 这里的形状应该是【N，5,50】
+
+            e2_output = tf.nn.relu(e2_output)
             e2_output = tf.layers.max_pooling1d(e2_output, args.entity_len, strides=1, padding="valid")
             e2_output = tf.reshape(e2_output, [-1, args.filter_size])  # tf.squeeze()
-            self.e2_output = tf.concat([e2_output,self.e2_type_emb], axis=-1)  # tf.squeeze()
+
+            if self.is_training:
+                self.e2_output=tf.nn.dropout(tf.concat([e2_output,self.e2_type_emb], axis=-1),args.dropout)
+            else:
+                self.e2_output = tf.concat([e2_output,self.e2_type_emb], axis=-1)  # tf.squeeze()
 
 
         with tf.variable_scope('rnn_layer'):
@@ -95,7 +105,7 @@ class entity_attention_model(object):
 
         # 这里做二次attention
 
-        dense=tf.layers.Dense(args.filter_size+args.entity_type_dim) # todo 这里可以加入激活函数
+        dense=tf.layers.Dense(args.filter_size+args.entity_type_dim,activation=tf.nn.relu)
         self.e1_l1_out=tf.expand_dims(dense(self.e1_output), axis=1)
         self.e2_l1_out=tf.expand_dims(dense(self.e2_output), axis=1)
 

@@ -236,11 +236,11 @@ if __name__ == '__main__':
 
     train_sentences, train_entity1,train_entity2,train_real_relation,train_e1_pos,train_e2_pos,train_seq_len,train_entity1_type,train_entitiy2_type,train_r_e1_type,train_r_e2_type=createInputForModel(train, train_sample)
     # train_sentences, train_entity1,train_entity2,train_real_relation,train_e1_pos,train_e2_pos,train_seq_len,train_entity1_type,train_entitiy2_type,train_r_e1_type,train_r_e2_type\
-    #     =utils.loadData("../saved_data/train_input.bin")
+    #     =utils.loadData("../saved_data/train_input_sample.bin")
 
     dev_sentences, dev_entity1,dev_entity2,dev_real_relation,dev_e1_pos,dev_e2_pos,dev_seq_len,dev_entity1_type,dev_entitiy2_type,dev_r_e1_type,dev_r_e2_type=createInputForModel(train, dev_sample)
     # dev_sentences, dev_entity1,dev_entity2,dev_real_relation,dev_e1_pos,dev_e2_pos,dev_seq_len,dev_entity1_type,dev_entitiy2_type,dev_r_e1_type,dev_r_e2_type\
-    #     =utils.loadData("../saved_data/dev_input.bin")
+    #     =utils.loadData("../saved_data/dev_input_sample.bin")
 
     # "../saved_data/train_input.bin"
     input_e1 = tf.placeholder(shape=[None,5],dtype=tf.int32)
@@ -331,10 +331,13 @@ if __name__ == '__main__':
 
 
     train_op = tf.train.AdamOptimizer(args.lr).minimize(total_loss)
-
+    saver = tf.train.Saver(max_to_keep=2)
+    last_model_file = tf.train.latest_checkpoint(args.log_root_path)
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
+        if last_model_file is not None:
+            saver.restore(sess, last_model_file)
         for train_step in range(args.num_epochs):
             shuffIndex = np.random.permutation(np.arange(len(train_real_relation)))
             shuffIndex = shuffIndex[0:args.batch_size]
@@ -362,4 +365,5 @@ if __name__ == '__main__':
                 p,a, l = sess.run([ predict,acc, total_loss], feed_dict=feed)
                 print("测试集损失函数值是:%f,准确率是:%f"%(l,a))
                 print(classification_report(dev_real_relation[shuffIndex],p))
+                saver.save(sess, os.path.join(args.log_root_path, "seed-model"), global_step=train_step)
 
