@@ -6,22 +6,64 @@ import json
 import random
 import torch
 import numpy as np
-
-from utils import constant, helper, vocab
-
+from stanfordcorenlp import StanfordCoreNLP
+from gcn_utils import constant, helper, vocab
+nlp=StanfordCoreNLP("/home/huwenxiang/deeplearn/stanford-corenlp/stanford-corenlp-full-2018-10-05",lang="en")
 class DataLoader(object):
     """
     Load data from json files, preprocess and prepare batches.
     """
-    def __init__(self, filename, batch_size, opt, vocab, evaluation=False):
+    def __init__(self, filename, batch_size, opt, vocab, seed_data=None,evaluation=False):
         self.batch_size = batch_size
         self.opt = opt
         self.vocab = vocab
         self.eval = evaluation
         self.label2id = constant.LABEL_TO_ID
+        # 这里用一个方法将我们的sample 格式转换成 他们需要的格式。
+        if filename !=None:
+            with open(filename) as infile:
+                data = json.load(infile)
+        else:
+            data=[]
+            for s in seed_data:
+                # 这里进行采样
+                if np.random.rand(1) > 0.02 and s.relation is None:
+                    continue
+                d_map={}
+                id=s.entity1.doc_id+"-"+s.sentence.id
+                d_map["id"]=id
+                token=nlp.word_tokenize(s.sentence.text)
+                obj_type=s.entity2.type
+                subj_type=s.entity1.type
+                relation=s.relation.relation_type if s.relation is not None else "None"
+                dependency=nlp.dependency_parse(s.sentence.text)
+                stanford_deprel=[0]*len(dependency)
+                stanford_head = [0]*len(dependency)
+                for depen in dependency:
+                    stanford_deprel[depen[-1]-1]=depen[1]
+                    stanford_head[depen[-1]-1]=depen[0]
+                stanford_ner=list(map(lambda x:x[1],nlp.ner(s.sentence.text)))
+                stanford_pos=list(map(lambda x:x[1],nlp.pos_tag(s.sentence.text)))
+                d_map["stanford_ner"]=stanford_ner
+                d_map["stanford_pos"]=stanford_pos
+                d_map["stanford_deprel"]=stanford_deprel
+                d_map["stanford_head"]=stanford_head
+                d_map["token"]=token
+                d_map["obj_type"]=obj_type
+                d_map["subj_type"]=subj_type
+                d_map["relation"]=relation
+                # 最麻烦的是拿到位置向量。
 
-        with open(filename) as infile:
-            data = json.load(infile)
+
+
+
+
+                data.append(d_map)
+
+
+
+            pass
+
         self.raw_data = data
         data = self.preprocess(data, vocab, opt)
 

@@ -82,19 +82,14 @@ def createInputForModel(data,samples):
         if np.random.rand(1)>0.02 and r_obj is None:
             continue
 
-
-
-
-
-
-        bucket=collections.OrderedDict()
+        bucket=collections.OrderedDict()# 创建位置的
         entity1_type.append(config["entity_type2id"][sample.entity1.type])
         entity2_type.append(config["entity_type2id"][sample.entity2.type])
         relation_entity1_type.append(config["entity_all_relation_type2id"]["None" if r_obj is None else r_obj.entity1_type])
         relation_entity2_type.append(config["entity_all_relation_type2id"]["None" if r_obj is None else r_obj.entity2_type])
 
         for  i, c in enumerate(s_obj.text):
-            bucket[i+sentence_start_end[0]]=c
+            bucket[i+sentence_start_end[0]]=c# 每一个字符 ，都对应一个位置
         temple=""
         last_pos=0
         split_words=collections.OrderedDict()
@@ -153,7 +148,7 @@ def createInputForModel(data,samples):
         # 下面加入实体的信息
         entity1_index=[]
         entity2_index=[]
-        for i in range(args.entity_len):
+        for i in range(args.entity_len):# 加入实体的word_id
             if i < len(en1):
                 entity1_index.append(word2idIndex.get(en1[i], word2idIndex[args.UNK]))
             else:
@@ -161,7 +156,7 @@ def createInputForModel(data,samples):
 
         entity1.append(entity1_index)
 
-        for i in range(args.entity_len):
+        for i in range(args.entity_len):# 对实体做填充
             if i < len(en2):
                 entity2_index.append(word2idIndex.get(en2[i], word2idIndex[args.UNK]))
             else:
@@ -197,7 +192,7 @@ def createInputForModel(data,samples):
 
         # en1_pos[en1_start:en1_start+len(en1)]=args.pos_limit
         # en2_pos[en2_start:en2_start+len(en2)]=args.pos_limit
-        entity1_pos.append(en1_pos)
+        entity1_pos.append(en1_pos)# 这里还需要校验。
         entity2_pos.append(en2_pos)
 
 

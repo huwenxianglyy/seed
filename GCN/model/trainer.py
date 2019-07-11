@@ -9,7 +9,7 @@ from torch.autograd import Variable
 import numpy as np
 
 from model.gcn import GCNClassifier
-from utils import constant, torch_utils
+from gcn_utils import constant, torch_utils
 
 class Trainer(object):
     def __init__(self, opt, emb_matrix=None):

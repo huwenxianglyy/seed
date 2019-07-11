@@ -7,7 +7,7 @@ import argparse
 import numpy as np
 from collections import Counter
 
-from utils import vocab, constant, helper
+from gcn_utils import vocab, constant, helper
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Prepare vocab for relation extraction.')

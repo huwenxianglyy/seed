@@ -6,7 +6,8 @@ from docObject import *
 import utils as utils
 from config import config
 
-
+from stanfordcorenlp import  StanfordCoreNLP
+nlp=StanfordCoreNLP("/home/huwenxiang/deeplearn/stanford-corenlp/stanford-corenlp-full-2018-10-05",lang="en")
 def get_type_pos(fp_type_pos):  # 这里获取 实体类型和实体位置 todo  这里获取信息 要注意 标签的单词之间有空格得情况  可以判断 t_p得长度，根据不同长度做处理
     t_p = fp_type_pos.split(' ')
     assert len(t_p) >= 3
@@ -147,7 +148,7 @@ def creat_word_obj(doc):
 
 
 if __name__ == '__main__':
-    file_root_path = 'D:/git/seed/BioNLP-ST-2016_SeeDev-binary_train/'
+    file_root_path = './BioNLP-ST-2016_SeeDev-binary_train/'
     # file_root_path = 'D:/git/seed/BioNLP-ST-2016_SeeDev-binary_dev/'
     # file_root_path = 'E:/bioNLP-SeeDev/BioNLP-ST-2016_SeeDev-binary_dev'
     result = []

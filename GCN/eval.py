@@ -8,8 +8,8 @@ import torch
 
 from data.loader import DataLoader
 from model.trainer import GCNTrainer
-from utils import torch_utils, scorer, constant, helper
-from utils.vocab import Vocab
+from gcn_utils import torch_utils, scorer, constant, helper
+from gcn_utils.vocab import Vocab
 
 parser = argparse.ArgumentParser()
 parser.add_argument('model_dir', type=str, help='Directory of the model.')

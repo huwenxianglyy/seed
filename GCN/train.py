@@ -1,7 +1,7 @@
 """
 Train a model on TACRED.
 """
-
+import config
 import os
 import sys
 from datetime import datetime
@@ -14,11 +14,13 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
+import utils
 
 from data.loader import DataLoader
 from model.trainer import GCNTrainer
-from utils import torch_utils, scorer, constant, helper
-from utils.vocab import Vocab
+from gcn_utils import torch_utils, scorer, constant, helper
+from gcn_utils.vocab import Vocab
+import itertools
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_dir', type=str, default='dataset/tacred')
@@ -85,7 +87,8 @@ opt = vars(args)
 label2id = constant.LABEL_TO_ID
 opt['num_class'] = len(label2id)
 
-# load vocab
+#  这里修改下 词向量的加入
+
 vocab_file = opt['vocab_dir'] + '/vocab.pkl'
 vocab = Vocab(vocab_file, load=True)
 opt['vocab_size'] = vocab.size
@@ -94,11 +97,35 @@ emb_matrix = np.load(emb_file) # 词向量
 assert emb_matrix.shape[0] == vocab.size
 assert emb_matrix.shape[1] == opt['emb_dim']
 
+# 这里用我们的词向量替换
+# vocab.id2word=config.args.Id2Word
+# vocab.word2id=config.args.word2Id
+
+
+
+
+train = utils.loadData('../saved_data/train.bin')# 这个是我们的数据
+dev = utils.loadData('../saved_data/dev.bin')
+
+# 这里变成sample 对象
+train_sample=list(itertools.chain(*list(map(lambda x:x.samples,train))))
+dev_sample=list(itertools.chain(*list(map(lambda x:x.samples,dev))))
+
+
+
+
+
 # load data
 print("Loading data from {} with batch size {}...".format(opt['data_dir'], opt['batch_size']))
-train_batch = DataLoader(opt['data_dir'] + '/train.json', opt['batch_size'], opt, vocab, evaluation=False)
+train_batch = DataLoader(opt['data_dir'] + '/train.json', opt['batch_size'], opt, vocab,train_sample, evaluation=False)
+# train_batch = DataLoader(None, opt['batch_size'], opt, vocab,train_sample, evaluation=False)
 # tokens, pos, ner, deprel, head, subj_positions, obj_positions, subj_type, obj_type, relation
-dev_batch = DataLoader(opt['data_dir'] + '/dev.json', opt['batch_size'], opt, vocab, evaluation=True)
+dev_batch = DataLoader(opt['data_dir'] + '/dev.json', opt['batch_size'], opt, vocab, dev_sample,evaluation=True)
+# dev_batch = DataLoader(None, opt['batch_size'], opt, vocab, dev_sample,evaluation=True)
+
+
+
+
 
 model_id = opt['id'] if len(opt['id']) > 1 else '0' + opt['id']
 model_save_dir = opt['save_dir'] + '/' + model_id

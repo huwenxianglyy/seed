@@ -98,8 +98,8 @@ def head_to_tree(head, tokens, len_, prune, subj_pos, obj_pos):
             cas.intersection_update(tmp)
 
         # find lowest common ancestor
-        if len(cas) == 1:
-            lca = list(cas)[0]
+        if len(cas) == 1: # 这里找最早的公共祖先。
+            lca = list(cas)[0] # 如果只有一个元素，那公共祖先就是root
         else:
             child_count = {k:0 for k in cas}
             for ca in cas:
@@ -131,7 +131,7 @@ def head_to_tree(head, tokens, len_, prune, subj_pos, obj_pos):
                     for j in stack:
                         if j >= 0 and dist[j] < 0:
                             dist[j] = int(1e4) # aka infinity
-
+        # dist 和实体相关且包含最小公共祖先的地方 分值是 0，1，。。。 其他 10000
         highest_node = lca
         nodes = [Tree() if dist[i] <= prune else None for i in range(len_)]
 

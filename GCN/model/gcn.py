@@ -9,7 +9,7 @@ from torch.autograd import Variable
 import numpy as np
 
 from model.tree import Tree, head_to_tree, tree_to_adj
-from utils import constant, torch_utils
+from gcn_utils import constant, torch_utils
 
 class GCNClassifier(nn.Module):
     """ A wrapper classifier for GCNRelationModel. """
@@ -35,7 +35,7 @@ class GCNRelationModel(nn.Module):
         self.emb_matrix = emb_matrix # 词向量
 
         # create embedding layers
-        self.emb = nn.Embedding(opt['vocab_size'], opt['emb_dim'], padding_idx=constant.PAD_ID)
+        self.emb = nn.Embedding(opt['vocab_size'], opt['emb_dim'], padding_idx=constant.PAD_ID)# PAD_ID 要修改。
         self.pos_emb = nn.Embedding(len(constant.POS_TO_ID), opt['pos_dim']) if opt['pos_dim'] > 0 else None
         self.ner_emb = nn.Embedding(len(constant.NER_TO_ID), opt['ner_dim']) if opt['ner_dim'] > 0 else None
         embeddings = (self.emb, self.pos_emb, self.ner_emb)
@@ -70,7 +70,7 @@ class GCNRelationModel(nn.Module):
 
     def forward(self, inputs):
         words, masks, pos, ner, deprel, head, subj_pos, obj_pos, subj_type, obj_type = inputs # unpack
-        l = (masks.data.cpu().numpy() == 0).astype(np.int64).sum(1)
+        l = (masks.data.cpu().numpy() == 0).astype(np.int64).sum(1) # 句子长度
         maxlen = max(l) #
 
         def inputs_to_tree_reps(head, words, l, prune, subj_pos, obj_pos):

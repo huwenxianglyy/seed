@@ -2,17 +2,8 @@ import json
 import pickle
 import re
 from collections import Counter
-from config import *
 import numpy as np
-import jieba
-import os
-import shutil
-# import torch
-from nltk.corpus import stopwords
-import nltk
-# from stanfordcorenlp import StanfordCoreNLP
-
-
+from tqdm import  tqdm
 
 
 def read_file(path):
