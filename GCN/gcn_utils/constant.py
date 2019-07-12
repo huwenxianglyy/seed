@@ -2,7 +2,7 @@
 Define constants.
 """
 EMB_INIT_RANGE = 1.0
-
+import collections
 # vocab
 PAD_TOKEN = '<PAD>'
 PAD_ID = 0
@@ -11,10 +11,27 @@ UNK_ID = 1
 
 VOCAB_PREFIX = [PAD_TOKEN, UNK_TOKEN]
 
-# hard-coded mappings from fields to ids
-SUBJ_NER_TO_ID = {PAD_TOKEN: 0, UNK_TOKEN: 1, 'ORGANIZATION': 2, 'PERSON': 3}
+# hard-coded mappings from fields to ids    原版
+# SUBJ_NER_TO_ID = {PAD_TOKEN: 0, UNK_TOKEN: 1, 'ORGANIZATION': 2, 'PERSON': 3}
+# OBJ_NER_TO_ID = {PAD_TOKEN: 0, UNK_TOKEN: 1, 'PERSON': 2, 'ORGANIZATION': 3, 'DATE': 4, 'NUMBER': 5, 'TITLE': 6, 'COUNTRY': 7, 'LOCATION': 8, 'CITY': 9, 'MISC': 10, 'STATE_OR_PROVINCE': 11, 'DURATION': 12, 'NATIONALITY': 13, 'CAUSE_OF_DEATH': 14, 'CRIMINAL_CHARGE': 15, 'RELIGION': 16, 'URL': 17, 'IDEOLOGY': 18}
 
-OBJ_NER_TO_ID = {PAD_TOKEN: 0, UNK_TOKEN: 1, 'PERSON': 2, 'ORGANIZATION': 3, 'DATE': 4, 'NUMBER': 5, 'TITLE': 6, 'COUNTRY': 7, 'LOCATION': 8, 'CITY': 9, 'MISC': 10, 'STATE_OR_PROVINCE': 11, 'DURATION': 12, 'NATIONALITY': 13, 'CAUSE_OF_DEATH': 14, 'CRIMINAL_CHARGE': 15, 'RELIGION': 16, 'URL': 17, 'IDEOLOGY': 18}
+
+entity_type = ['Tissue', 'RNA', 'Protein_Family',
+                         'Environmental_Factor', 'Genotype', 'Pathway',
+                         'Protein', 'Regulatory_Network', 'Box', 'Protein_Complex',
+                         'Gene_Family', 'Gene', 'Promoter', 'Hormone',
+                         'Protein_Domain', 'Development_Phase']
+
+SUBJ_NER_TO_ID = collections.OrderedDict()
+SUBJ_NER_TO_ID["PAD_TOKEN"]=0
+SUBJ_NER_TO_ID["UNK_TOKEN"]=1
+OBJ_NER_TO_ID = collections.OrderedDict()
+OBJ_NER_TO_ID["PAD_TOKEN"]=0
+OBJ_NER_TO_ID["UNK_TOKEN"]=1
+
+for i,t in enumerate(entity_type):
+    SUBJ_NER_TO_ID[t]=i
+    OBJ_NER_TO_ID[t]=i
 
 NER_TO_ID = {PAD_TOKEN: 0, UNK_TOKEN: 1, 'O': 2, 'PERSON': 3, 'ORGANIZATION': 4, 'LOCATION': 5, 'DATE': 6, 'NUMBER': 7, 'MISC': 8, 'DURATION': 9, 'MONEY': 10, 'PERCENT': 11, 'ORDINAL': 12, 'TIME': 13, 'SET': 14}
 
@@ -24,6 +41,27 @@ DEPREL_TO_ID = {PAD_TOKEN: 0, UNK_TOKEN: 1, 'punct': 2, 'compound': 3, 'case': 4
 
 NEGATIVE_LABEL = 'no_relation'
 
-LABEL_TO_ID = {'no_relation': 0, 'per:title': 1, 'org:top_members/employees': 2, 'per:employee_of': 3, 'org:alternate_names': 4, 'org:country_of_headquarters': 5, 'per:countries_of_residence': 6, 'org:city_of_headquarters': 7, 'per:cities_of_residence': 8, 'per:age': 9, 'per:stateorprovinces_of_residence': 10, 'per:origin': 11, 'org:subsidiaries': 12, 'org:parents': 13, 'per:spouse': 14, 'org:stateorprovince_of_headquarters': 15, 'per:children': 16, 'per:other_family': 17, 'per:alternate_names': 18, 'org:members': 19, 'per:siblings': 20, 'per:schools_attended': 21, 'per:parents': 22, 'per:date_of_death': 23, 'org:member_of': 24, 'org:founded_by': 25, 'org:website': 26, 'per:cause_of_death': 27, 'org:political/religious_affiliation': 28, 'org:founded': 29, 'per:city_of_death': 30, 'org:shareholders': 31, 'org:number_of_employees/members': 32, 'per:date_of_birth': 33, 'per:city_of_birth': 34, 'per:charges': 35, 'per:stateorprovince_of_death': 36, 'per:religion': 37, 'per:stateorprovince_of_birth': 38, 'per:country_of_birth': 39, 'org:dissolved': 40, 'per:country_of_death': 41}
+#原版
+# LABEL_TO_ID = {'no_relation': 0, 'per:title': 1, 'org:top_members/employees': 2, 'per:employee_of': 3, 'org:alternate_names': 4, 'org:country_of_headquarters': 5, 'per:countries_of_residence': 6, 'org:city_of_headquarters': 7, 'per:cities_of_residence': 8, 'per:age': 9, 'per:stateorprovinces_of_residence': 10, 'per:origin': 11, 'org:subsidiaries': 12, 'org:parents': 13, 'per:spouse': 14, 'org:stateorprovince_of_headquarters': 15, 'per:children': 16, 'per:other_family': 17, 'per:alternate_names': 18, 'org:members': 19, 'per:siblings': 20, 'per:schools_attended': 21, 'per:parents': 22, 'per:date_of_death': 23, 'org:member_of': 24, 'org:founded_by': 25, 'org:website': 26, 'per:cause_of_death': 27, 'org:political/religious_affiliation': 28, 'org:founded': 29, 'per:city_of_death': 30, 'org:shareholders': 31, 'org:number_of_employees/members': 32, 'per:date_of_birth': 33, 'per:city_of_birth': 34, 'per:charges': 35, 'per:stateorprovince_of_death': 36, 'per:religion': 37, 'per:stateorprovince_of_birth': 38, 'per:country_of_birth': 39, 'org:dissolved': 40, 'per:country_of_death': 41}
+
+
+
+
+
+relation_type = ['None', 'Is_Involved_In_Process', 'Regulates_Expression',
+                           'Has_Sequence_Identical_To','Exists_In_Genotype',
+                           'Transcribes_Or_Translates_To', 'Occurs_In_Genotype', 'Composes_Protein_Complex',
+                           'Is_Linked_To',
+                           'Regulates_Process', 'Interacts_With', 'Binds_To', 'Occurs_During', 'Is_Member_Of_Family',
+                           'Is_Functionally_Equivalent_To',
+                           'Is_Localized_In', 'Regulates_Accumulation',
+                           'Composes_Primary_Structure', 'Exists_At_Stage', 'Regulates_Development_Phase',
+                           'Is_Protein_Domain_Of', 'Regulates_Tissue_Development', 'Regulates_Molecule_Activity']
+LABEL_TO_ID = {t: i for i, t in enumerate(relation_type)}
+
+
+
+
+
 
 INFINITY_NUMBER = 1e12

@@ -2,6 +2,8 @@
 Data loader for TACRED json files.
 """
 
+
+import tqdm
 import json
 import random
 import torch
@@ -9,6 +11,14 @@ import numpy as np
 from stanfordcorenlp import StanfordCoreNLP
 from gcn_utils import constant, helper, vocab
 nlp=StanfordCoreNLP("/home/huwenxiang/deeplearn/stanford-corenlp/stanford-corenlp-full-2018-10-05",lang="en")
+
+
+def escape_text(text):
+    text = text.replace("\\", "\\\\")
+    text.replace("'", "\\'")
+    return text
+
+
 class DataLoader(object):
     """
     Load data from json files, preprocess and prepare batches.
@@ -25,12 +35,15 @@ class DataLoader(object):
                 data = json.load(infile)
         else:
             data=[]
-            for s in seed_data:
+            iii=0
+            for s in tqdm.tqdm(seed_data):
+
                 # 这里进行采样
                 if np.random.rand(1) > 0.02 and s.relation is None:
                     continue
+                iii+=1
                 d_map={}
-                id=s.entity1.doc_id+"-"+s.sentence.id
+                id=s.entity1.doc_id+"-"+str(s.sentence.id)
                 d_map["id"]=id
                 token=nlp.word_tokenize(s.sentence.text)
                 obj_type=s.entity2.type
@@ -40,8 +53,8 @@ class DataLoader(object):
                 stanford_deprel=[0]*len(dependency)
                 stanford_head = [0]*len(dependency)
                 for depen in dependency:
-                    stanford_deprel[depen[-1]-1]=depen[1]
-                    stanford_head[depen[-1]-1]=depen[0]
+                    stanford_head[depen[-1]-1]=depen[1]
+                    stanford_deprel[depen[-1]-1]=depen[0]
                 stanford_ner=list(map(lambda x:x[1],nlp.ner(s.sentence.text)))
                 stanford_pos=list(map(lambda x:x[1],nlp.pos_tag(s.sentence.text)))
                 d_map["stanford_ner"]=stanford_ner
@@ -52,17 +65,73 @@ class DataLoader(object):
                 d_map["obj_type"]=obj_type
                 d_map["subj_type"]=subj_type
                 d_map["relation"]=relation
-                # 最麻烦的是拿到位置向量。
+                # 最麻烦的是拿到位置。
+
+                sentence_start = s.sentence.s_start2end_index[0]
+                words_pos = {}
+
+
+                orig_text=s.sentence.text
+                for i, tok in enumerate(token):
+                    try:
+                        start=orig_text.index(tok)
+                        end=start+len(tok)
+                        words_pos[start+sentence_start] = i
+                        orig_text=orig_text[end:]
+                        sentence_start+=len(tok)+start
+                    except:
+                        raise ("分词后的token在原文找打不到")
+
+                for i in range(len(s.sentence.text)):
+                    current_pos=i+s.sentence.s_start2end_index[0]
+                    try:
+                        if current_pos not in words_pos.keys():
+                            words_pos[current_pos]=words_pos[current_pos-1]
+                    except:
+                        pass
 
 
 
+                e1_pos=s.entity1.pos
+                e2_pos=s.entity2.pos
+                e1_start = e1_pos[0][0]
+                e1_end = int(e1_pos[-1][-1])-1
+                e2_start = e2_pos[0][0]
+                e2_end = int(e2_pos[-1][-1])-1
+
+                entity1_start=words_pos[int(e1_start)]
+                entity1_end=words_pos[int(e1_end)]
+                entity2_start=words_pos[int(e2_start)]
+                entity2_end=words_pos[int(e2_end)]
+                d_map["subj_start"]=entity1_start
+                d_map["subj_end"]=entity1_end
+                d_map["obj_start"]=entity2_start
+                d_map["obj_end"]=entity2_end
+                # for t in token[entity1_start:entity1_end+1]:
+                #     if t  not in s.entity1.text:
+                #         print("entity1:"+t+"---"+s.entity1.text)
+                #
+                # for t in token[entity2_start:entity2_end+1]:
+                #     if t  not in s.entity2.text:
+                #         print("entity2:"+t+"---"+s.entity2.text)
+
+                if stanford_head.count(0)>1:
+                    continue
+
+
+                if stanford_deprel[entity1_start]==0 or stanford_deprel[entity1_end]==0 or  stanford_deprel[entity2_start]==0 or stanford_deprel[entity2_end]==0:
+                    print(1)
+
+                # assert stanford_deprel[entity1_start]!=0
+                # assert stanford_deprel[entity1_end]!=0
+                # assert stanford_deprel[entity2_start]!=0
+                # assert stanford_deprel[entity2_end]!=0
 
 
                 data.append(d_map)
 
 
 
-            pass
 
         self.raw_data = data
         data = self.preprocess(data, vocab, opt)

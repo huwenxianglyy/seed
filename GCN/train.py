@@ -117,12 +117,14 @@ dev_sample=list(itertools.chain(*list(map(lambda x:x.samples,dev))))
 
 # load data
 print("Loading data from {} with batch size {}...".format(opt['data_dir'], opt['batch_size']))
-train_batch = DataLoader(opt['data_dir'] + '/train.json', opt['batch_size'], opt, vocab,train_sample, evaluation=False)
-# train_batch = DataLoader(None, opt['batch_size'], opt, vocab,train_sample, evaluation=False)
-# tokens, pos, ner, deprel, head, subj_positions, obj_positions, subj_type, obj_type, relation
-dev_batch = DataLoader(opt['data_dir'] + '/dev.json', opt['batch_size'], opt, vocab, dev_sample,evaluation=True)
-# dev_batch = DataLoader(None, opt['batch_size'], opt, vocab, dev_sample,evaluation=True)
+# train_batch = DataLoader(opt['data_dir'] + '/train.json', opt['batch_size'], opt, vocab,train_sample, evaluation=False)
+# train_batch = DataLoader(None, opt['batch_size'], opt, vocab,train_sample, evaluation=False)# "./dataset/seed_train.bin"
+train_batch = utils.loadData("./dataset/seed_train_batch.bin")# "./dataset/seed_train.bin"
 
+# dev_batch = DataLoader(opt['data_dir'] + '/dev.json', opt['batch_size'], opt, vocab, dev_sample,evaluation=True)
+# dev_batch = DataLoader(None, opt['batch_size'], opt, vocab, dev_sample,evaluation=True)
+dev_batch = utils.loadData("./dataset/seed_test_batch.bin")
+# tokens, pos, ner, deprel, head, subj_positions, obj_positions, subj_type, obj_type, relation
 
 
 

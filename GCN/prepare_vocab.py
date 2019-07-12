@@ -6,7 +6,7 @@ import pickle
 import argparse
 import numpy as np
 from collections import Counter
-
+import utils
 from gcn_utils import vocab, constant, helper
 
 def parse_args():
@@ -42,6 +42,12 @@ def main():
     train_tokens = load_tokens(train_file)
     dev_tokens = load_tokens(dev_file)
     test_tokens = load_tokens(test_file)
+
+    train_tokens = utils.loadData("../saved_data/train_word.bin")
+    word2 = utils.loadData("../saved_data/dev_word.bin")
+    train_tokens.update(word2)
+    train_tokens=list(train_tokens)
+
     if args.lower:
         train_tokens, dev_tokens, test_tokens = [[t.lower() for t in tokens] for tokens in\
                 (train_tokens, dev_tokens, test_tokens)]
